@@ -1,8 +1,12 @@
 const express = require("express");
+const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 const db = require("./database");
 const app = express();
 app.use(express.json());
 const PORT = 3030;
+
+app.use(express.json());
 
 const session = require("express-session");
 const Keycloak = require("keycloak-connect");
@@ -15,6 +19,20 @@ app.use(
     store: memoryStore,
   })
 );
+
+// Configuration CORS: Autoriser toutes les origines
+app.use(cors());
+// Pour restreindre aux domaines autorisés, décommentez et adaptez la ligne suivante :
+// app.use(cors({ origin: ['http://localhost:3030, 'http://localhost:4200'] }));
+
+// 2. Configuration du Rate Limiting : 100 requêtes/15 min
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limite chaque IP à 100 requêtes par fenêtre
+  message:
+    "Trop de requêtes effectuées depuis cette IP, veuillez réessayer après 15 minutes.",
+});
+app.use(limiter);
 
 // Configuration de Keycloak
 const keycloak = new Keycloak({ store: memoryStore }, "./keycloak-config.json");
