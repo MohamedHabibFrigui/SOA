@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Chat Client</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .chat-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-header {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .chat-history {
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+      }
+
+      .chat-message {
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 4px;
+        background-color: #e1f5fe;
+        word-wrap: break-word;
+      }
+
+      .chat-message strong {
+        color: #007bff;
+      }
+
+      .chat-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .chat-inputs input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .chat-inputs button {
+        padding: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .chat-inputs button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">WebSocket Chat Client</div>
+      <div id="chat-history" class="chat-history"></div>
+      <div class="chat-inputs">
+        <input type="text" id="roomId" placeholder="Room ID" />
+        <input type="text" id="senderId" placeholder="Your ID" />
+        <input type="text" id="message" placeholder="Type a message" />
+        <button onclick="sendMessage()">Send Message</button>
+      </div>
+    </div>
+
+    <script>
+      const ws = new WebSocket("ws://localhost:8080");
+
+      ws.onopen = () => {
+        console.log("Connected to WebSocket server");
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        displayMessage(message.chat_message);
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket connection closed");
+      };
+
+      function sendMessage() {
+        const roomId = document.getElementById("roomId").value;
+        const senderId = document.getElementById("senderId").value;
+        const content = document.getElementById("message").value;
+
+        if (!roomId || !senderId || !content) {
+          alert("Please fill in all fields.");
+          return;
+        }
+
+        const message = {
+          chat_message: {
+            id: Date.now().toString(),
+            room_id: roomId,
+            sender_id: senderId,
+            content: content,
+          },
+        };
+
+        ws.send(JSON.stringify(message));
+        document.getElementById("message").value = ""; // Clear input
+      }
+
+      function displayMessage(message) {
+        const chatHistoryDiv = document.getElementById("chat-history");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "chat-message";
+        messageDiv.innerHTML = `<strong>${message.sender_id}:</strong> ${message.content}`;
+        chatHistoryDiv.appendChild(messageDiv);
+        chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight; // Auto-scroll to the latest message
+      }
+    </script>
+  </body>
+</html>
